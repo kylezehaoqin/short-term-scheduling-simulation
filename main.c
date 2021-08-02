@@ -5,6 +5,10 @@
 #include <math.h>
 
 
+double next_exp();
+char get_process_id( int n );
+int timediff( struct timespec end, struct timespec start );
+
 int main( int argc, char ** argv )
 {
 	// =================================================================================
@@ -71,7 +75,33 @@ int main( int argc, char ** argv )
 		fprintf( stderr, "ERROR: Invalid timeslice value ( argv[7] )\n");
 		return EXIT_FAILURE;
 	}
-	
-	
+
+	// srand48( seed );
+
+	// int i;
+	// for ( i = 0; i < 26; i++ )	
+	// {
+	// 	double tmp = next_exp(lambda, upper_bound);
+	// 	printf("%f\n", tmp);
+	// 	char tmpe = get_process_id( i );
+	// 	printf("%c\n", tmpe);
+	// }
+
+	struct timespec start, end;
+	int t;
+
+	printf("Timer starts\n");
+
+	clock_gettime( CLOCK_MONOTONIC_RAW, &start );
+
+	usleep(3500);
+
+	clock_gettime( CLOCK_MONOTONIC_RAW, &end );
+
+	t = timediff( end, start );
+
+
+	printf( "time taken %d ms\n", t );
+
 	return EXIT_SUCCESS;
 }
