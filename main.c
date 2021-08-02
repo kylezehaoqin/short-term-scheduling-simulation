@@ -7,7 +7,8 @@
 
 double next_exp();
 char get_process_id( int n );
-int timediff( struct timespec end, struct timespec start );
+double timediff( struct timespec end, struct timespec start );
+void processes_init();
 
 int main( int argc, char ** argv )
 {
@@ -76,19 +77,22 @@ int main( int argc, char ** argv )
 		return EXIT_FAILURE;
 	}
 
-	// srand48( seed );
+	// ================================================================================
+	// =========== Start of Simulation  ===============================================
+	// ================================================================================
 
-	// int i;
-	// for ( i = 0; i < 26; i++ )	
-	// {
-	// 	double tmp = next_exp(lambda, upper_bound);
-	// 	printf("%f\n", tmp);
-	// 	char tmpe = get_process_id( i );
-	// 	printf("%c\n", tmpe);
-	// }
+
+	double CPU_BURST_TIME;
+	double CPU_BURSTS;
+	double WAIT_TIME;
+	double WAITS;
+	double TURNAROUND_TIME;
+	int CONTEXT_SWITCH;
+	int PREEMPTION;
+	double CPU_UTIL;
 
 	struct timespec start, end;
-	int t;
+	double t;
 
 	printf("Timer starts\n");
 
@@ -101,7 +105,7 @@ int main( int argc, char ** argv )
 	t = timediff( end, start );
 
 
-	printf( "time taken %d ms\n", t );
+	printf( "time taken: %f ms\n", t );
 
 	return EXIT_SUCCESS;
 }

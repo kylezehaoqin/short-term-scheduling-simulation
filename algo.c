@@ -6,57 +6,49 @@
 #include <time.h>
 
 // Exponential distribution pseudo random number generator function
-double next_exp( double lambda, int upper_bound )
+double next_exp()
 {
-
-                      /* uniform to exponential distribution: */
-                      /*                                      */
-  double min = 0;     /*        -ln(r)                        */
-  double max = 0;     /*  x = ----------                      */
-  double sum = 0;     /*        lambda                        */
-
-  int iterations = 10000000;    /* <== make this number very large */
-
-  for ( int i = 0 ; i < iterations ; i++ )
-  {
-    /* generate the next pseudo-random value x */
-    // double lambda = 0.001;  /* average should be 1/lambda ==> 1000 */
-
-    double r = drand48();   /* uniform dist [0.00,1.00) -- also see random() */
-
-    double x = -log( r ) / lambda;  /* log() is natural log */
-
-    /* skip values that are far down the "long tail" of the distribution */
-    if ( x > upper_bound ) { i--; continue; }
-
-    /* TO DO: Since adding the above line of code will lower the
-              resulting average, try to modify lamdba to get back to
-              an average of say 1000 */
-
-    /* display the first 20 pseudo-random values */
-    // if ( i < 20 ) printf( "x is %lf\n", x );
-
-    sum += x;
-    if ( i == 0 || x < min ) { min = x; }
-    if ( i == 0 || x > max ) { max = x; }
-  }
-
-  double avg = sum / iterations;
-	return avg;
+	return drand48();
 }
 
 // returns characters from A-Z by converting ASCII int value to char
-// requires: n in range [0, 26)
+// requires: n in range [1, 26]
 char get_process_id( int n )
 {
-	int base = 65;
+	int base = 64;
 	return (char)(base + n);
 }
 
 // returns elapsed time in milliseconds
-int timediff( struct timespec end, struct timespec start )
+double timediff( struct timespec end, struct timespec start )
 {
 	double elapsed;
-	elapsed = (double)(end.tv_sec - start.tv_sec) * 1000 + (double)(end.tv_nsec - start.tv_nsec) / 1000000;
+	elapsed = (double)(end.tv_sec - start.tv_sec) * 1000 + \
+						(double)(end.tv_nsec - start.tv_nsec) / 1000000;
 	return (int)elapsed;
+}
+
+void processes_init( int n, int seed, double lambda, int upper_bound, int t_cs,
+									 double alpha, int time_slice )
+{
+	srand48( seed );
+
+	double rand;
+	int arrival_time;
+	int cpu_bursts;
+	int cpu_burst_time;
+	int io_bursts;
+	int io_burst_time;
+	double tau;
+
+	int i;
+	for ( i = 0; i < n; i++ )
+	{
+		rand = next_exp();
+		arrival_time = floor( rand );
+		cpu_bursts = ceil( rand ) * 100;
+
+		printf("Process %c");
+		
+	}
 }
