@@ -12,6 +12,7 @@ typedef struct process
 	int arrival_time;
 	int cpu_bursts;
 	struct process * next;
+	struct process * prev;
 	int * cpu_burst_times;
 	int * io_burst_times;
 } Process;
@@ -26,6 +27,7 @@ Process * newProcess( char pid, int arrival_time, int cpu_bursts )
 	tmp->cpu_burst_times = ( int * )calloc( cpu_bursts, sizeof( int ) );
 	tmp->io_burst_times = ( int * )calloc( cpu_bursts - 1, sizeof( int ) );
 	tmp->next = NULL;
+	tmp->prev = NULL;
 
 	return tmp;
 }
@@ -33,15 +35,16 @@ Process * newProcess( char pid, int arrival_time, int cpu_bursts )
 // perform a deep copy of old process
 Process * copyProcess( Process * old )
 {
-	Process * new = ( Process * )calloc( 1, sizeof( Process ) );
-	new->pid = old->pid;
-	new->arrival_time = old->arrival_time;
-	new->cpu_bursts = old->cpu_bursts;
-	new->cpu_burst_times = ( int * )calloc( new->cpu_bursts, sizeof( int ) );
-	new->io_burst_times = ( int * )calloc( new->cpu_bursts - 1, sizeof( int ) );
-	new->next = NULL;
+	Process * new_ = ( Process * )calloc( 1, sizeof( Process ) );
+	new_->pid = old->pid;
+	new_->arrival_time = old->arrival_time;
+	new_->cpu_bursts = old->cpu_bursts;
+	new_->cpu_burst_times = ( int * )calloc( new_->cpu_bursts, sizeof( int ) );
+	new_->io_burst_times = ( int * )calloc( new_->cpu_bursts - 1, sizeof( int ) );
+	new_->next = NULL;
+	new_->prev = NULL;
 
-	return new;
+	return new_;
 }
 
 // peek the arrival time of Process in the beginning of the ready queue
@@ -65,19 +68,30 @@ void push_by_arrival( Process ** head, Process * p )
 	// Push the process with less arrival time in front
 	if ( p->arrival_time < (*head)->arrival_time )
 	{
+		(*head)->prev = p;
 		p->next = *head;
 		*head = p;
 	}
 	else
 	{
 		// keep going down the queue until we find a process with larger arrival time;
-		while ( first->next != NULL && first->arrival_time < p->arrival_time )
+		while ( first->next != NULL && p->arrival_time > first->arrival_time )
 		{
 			first = first->next;
 		}
-		// insert the new process in queue
-		p->next = first->next;
-		first->next = p;
+		if ( first->arrival_time > p->arrival_time )
+		{
+			first->prev->next = p;
+			p->next = first;
+			p->prev = first->prev;
+			first->prev = p;
+		}
+		else
+		{
+			first->next = p;
+			p->prev = first;
+		}
+
 	}
 
 }
@@ -95,7 +109,7 @@ void print_queue( Process ** head )
 	{
 		while ( first != NULL )
 		{
-			printf( "%c", first->pid );
+			printf( "%c %d \t", first->pid, first->arrival_time );
 			first = first->next;
 		}
 	}
