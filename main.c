@@ -82,14 +82,14 @@ int main( int argc, char ** argv )
 	// ================================================================================
 
 
-	double CPU_BURST_TIME;
-	double CPU_BURSTS;
-	double WAIT_TIME;
-	double WAITS;
-	double TURNAROUND_TIME;
-	int CONTEXT_SWITCH;
-	int PREEMPTION;
-	double CPU_UTIL;
+	// double CPU_BURST_TIME;
+	// double CPU_BURSTS;
+	// double WAIT_TIME;
+	// double WAITS;
+	// double TURNAROUND_TIME;
+	// int CONTEXT_SWITCH;
+	// int PREEMPTION;
+	// double CPU_UTIL;
 
 	struct timespec start, end;
 	double t;
@@ -106,6 +106,8 @@ int main( int argc, char ** argv )
 
 
 	printf( "time taken: %f ms\n", t );
+
+	processes_init( n, seed, lambda, upper_bound, t_cs, alpha, time_slice);
 
 	return EXIT_SUCCESS;
 }
