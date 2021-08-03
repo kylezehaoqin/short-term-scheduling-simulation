@@ -30,7 +30,7 @@
 
 int main()
 {
-  srand48( time( NULL ) );
+  srand48( (long)2 );
 
                       /* uniform to exponential distribution: */
                       /*                                      */
@@ -43,21 +43,21 @@ int main()
   for ( int i = 0 ; i < iterations ; i++ )
   {
     /* generate the next pseudo-random value x */
-    double lambda = 0.001;  /* average should be 1/lambda ==> 1000 */
+    double lambda = 0.01;  /* average should be 1/lambda ==> 1000 */
 
     double r = drand48();   /* uniform dist [0.00,1.00) -- also see random() */
 
     double x = -log( r ) / lambda;  /* log() is natural log */
 
     /* skip values that are far down the "long tail" of the distribution */
-    if ( x > 3000 ) { i--; continue; }
+    if ( x > 256 ) { i--; continue; }
 
     /* TO DO: Since adding the above line of code will lower the
               resulting average, try to modify lamdba to get back to
               an average of say 1000 */
 
     /* display the first 20 pseudo-random values */
-    if ( i < 20 ) printf( "x is %lf\n", x );
+    if ( i < 16 ) printf( "x is %lf\n", x );
 
     sum += x;
     if ( i == 0 || x < min ) { min = x; }
