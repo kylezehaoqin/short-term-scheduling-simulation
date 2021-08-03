@@ -84,22 +84,6 @@ int main( int argc, char ** argv )
 	// ================================================================================
 
 
-	struct timespec start, end;
-	double t;
-
-	printf("Timer starts\n");
-
-	clock_gettime( CLOCK_MONOTONIC_RAW, &start );
-
-	usleep(3500);
-
-	clock_gettime( CLOCK_MONOTONIC_RAW, &end );
-
-	t = timediff( end, start );
-
-
-	printf( "time taken: %f ms\n", t );
-
 	Process * head = processes_init_by_arrival( n, seed, lambda, upper_bound );
 
 	print_queue( &head );
@@ -123,6 +107,8 @@ Process * processes_init_by_arrival
 	int io_burst_time;
 
 	int i = 0;
+	// Initial guess for tau
+	int tau = 1/lambda;
 
 	// NEED TO INITIALIZE THE HEAD OF READY QUEUE 
 	// ==================================================================================
@@ -136,7 +122,7 @@ Process * processes_init_by_arrival
 	// Get process CPU bursts
 	cpu_bursts = getCPU_Bursts( upper_bound );
 
-	Process * head = newProcess( pid, arrival_time, cpu_bursts );
+	Process * head = newProcess( pid, arrival_time, cpu_bursts, tau );
 	
 	// For each cpu burst, get CPU burst time and I/O burst time
 	int j;
@@ -157,6 +143,8 @@ Process * processes_init_by_arrival
 	}
 	printf("Process %c (arrival time %d ms) %d CPU bursts (tau %dms)\n", \
 				get_process_id( i ), arrival_time, cpu_bursts, (int)(1 / lambda));
+	
+	Process * test = copyProcess(head);
 	// ==================================================================================
 
 	for ( i = 1; i < n; i++ )
@@ -171,7 +159,7 @@ Process * processes_init_by_arrival
 		// Get process CPU bursts
 		cpu_bursts = getCPU_Bursts( upper_bound );
 
-		Process * tmp = newProcess( pid, arrival_time, cpu_bursts );
+		Process * tmp = newProcess( pid, arrival_time, cpu_bursts, tau );
 		
 		// For each cpu burst, get CPU burst time and I/O burst time
 		for ( j = 0; j < cpu_bursts; j++ )
