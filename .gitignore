@@ -3,3 +3,4 @@ test
 *.json
 *.txt
 *.out
+.vscode
