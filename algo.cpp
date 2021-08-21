@@ -6,6 +6,7 @@
 #include <queue>
 #include <vector>
 #include <map>
+#include <list>
 #include <iostream>
 #include <string>
 #include <utility>
@@ -61,10 +62,10 @@ char get_process_id( int n )
 }
 
 
-std::priority_queue<Process> processes_init( int n, int seed, double lambda, int upper_bound )
+std::vector<Process> processes_init( int n, int seed, double lambda, int upper_bound )
 {
 
-	std::priority_queue<Process> arrival_queue;
+	std::vector<Process> processes;
 
 	srand48( (long)seed );
 
@@ -110,39 +111,156 @@ std::priority_queue<Process> processes_init( int n, int seed, double lambda, int
 			}
 		}
 
-		arrival_queue.push( tmp );
+		processes.push_back( tmp );
 
 		printf("Process %c (arrival time %d ms) %d CPU bursts (tau %dms)\n", \
 		get_process_id( i ), arrival_time, cpu_bursts, tau );
 		
 	}
 	printf("\n");
-	return arrival_queue;
+	return processes;
 }
 
-void FCFS( int n, int seed, double lambda, int upper_bound )
+void printReadyQueue( std::list<char> ready_queue)
 {
-	int time = 0;
+	printf("[Q ");
 
-	std::priority_queue<Process> arrival_queue = processes_init( n, seed, lambda, upper_bound );
-
-	std::map<int, Process> processes;
-
-	
-
-	while( !arrival_queue.empty() )
+	if ( ready_queue.empty() )
 	{
-		Process tmp = arrival_queue.top();
-		std::pair<int, Process> process( tmp.getArrivalTime(), tmp);
-		processes.insert( process );
-		arrival_queue.pop();
+		printf("empty");
 	}
+	else
+	{
+		for ( auto itr : ready_queue )
+		{
+			printf("%c", itr);
+		}
+	}
+	printf("]\n");
+}
 
+// Performs First Come First Serve algorithhm simulation
+void FCFS( int n, int seed, double lambda, int upper_bound, int t_cs )
+{
+	
+	std::vector<Process> processes = processes_init( n, seed, lambda, upper_bound );
+	std::list<char> ready_queue;
+
+	int time = 0;
 	printf("time %dms: Simulator started for FCFS [Q empty]\n", time);
 
-	for ( auto p : processes )
+
+	bool cpu_busy = false;
+
+	while( 1 )
 	{
-		printf("%c arrives at %dms\n", p.second.getID(), p.first );
+		// Use a multimap to keep future events in "time" increasing order
+		std::multimap<int, Process> events;
+		// Use a vector to collect all other processes that tie
+		std::vector<Process> candidates;
+
+		// Check on simulation termination
+		// If no process left in processes, all processes terminated, break out of loop
+		if ( processes.empty() ) break;
+
+		for ( auto p : processes )
+		{
+			int next_operation = p.next_op;
+			events.insert( {p.next_op_time, p} );
+		}
+
+
+		// Find the event expected to happen the soonest
+		auto itr = events.begin();
+		int tmp_time = itr->first;
+		Process tmp = itr->second;
+		
+		// We are using a multimap which allows key collision
+		// Need to add "candidates" if they share the same next_op_time, then resolve ties
+		itr++;
+		while ( itr != events.end() && itr->first == tmp_time )
+		{
+			candidates.push_back( itr->second );
+			itr++;
+		}
+
+		// Resolving ties
+		// tie resolution order: 
+		// 			// cpu burst completion > io burst completion > new process arrival
+		// 			// we also defined macro:
+		// 			// CPU_BURST_COMP == 2, BACK_TO_Q == 1, ARRIVAL == 0
+		if ( !candidates.empty() )
+		{
+			for ( Process candidate : candidates )
+			{
+				// if next operation is the same, choose the one with lower alphabet
+				if ( tmp.next_op == candidate.next_op )
+				{
+					if ( tmp.pid > candidate.pid )
+					{	
+						tmp = candidate;
+					}
+				}
+				else
+				{
+					
+					if ( tmp.next_op > candidate.next_op )
+					{
+						tmp = candidate;
+					}
+				}
+			}
+		}
+
+		// See if cpu is busy and if next event's time is larger than current time
+		if ( !cpu_busy && time < tmp_time )
+		{
+			// if ready queue isn't empty, choose the front pid to perform cpu burst
+			if ( !ready_queue.empty() )
+			{
+				for ( auto p : processes )
+				{
+					// Find the process with such pid
+					if ( p.pid == ready_queue.front() )
+					{
+						p.cpuburst();
+						ready_queue.pop_front();
+						cpu_busy = true;
+						break;
+					}
+				}
+			}
+		}
+		
+		// printf("time %dms: ", time);
+		// // decide what to do based on tmp Process's next_op
+		// if ( tmp.next_op == ARRIVAL )
+		// {
+		// 	tmp.arrival();
+		// 	ready_queue.push_back( tmp.pid );
+		// }
+		// else if ( tmp.next_op == CPU_BURST )
+		// {
+		// 	tmp.cpuburst();
+
+		// }
+		// else if ( tmp.next_op == IO_BURST )
+		// {
+		// 	tmp.ioburst( time );
+		// }
+		// else if ( tmp.next_op == BACK_TO_Q )
+		// {
+		// 	tmp.backtoq();
+		// 	ready_queue.push_back( tmp.pid );
+		// }
+		// else if ( tmp.next_op == TERMINATION )
+		// {
+		// 	tmp.terminate();
+		// }
+
+		printReadyQueue( ready_queue );
+		time += tmp_time;
 	}
-	
+	printf("Simulator ended for FCFS [Q empty]\n\n");
+
 }

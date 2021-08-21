@@ -10,7 +10,7 @@
 double next_exp( double lambda, int upper_bound );
 char get_process_id( int n );
 int getCPU_Bursts( int upper_bound );
-void FCFS( int n, int seed, double lambda, int upper_bound );
+void FCFS( int n, int seed, double lambda, int upper_bound, int t_cs );
 
 
 int main( int argc, char ** argv )
@@ -85,7 +85,7 @@ int main( int argc, char ** argv )
 	// ================================================================================
 
 
-	FCFS( n, seed, lambda, upper_bound );
+	FCFS( n, seed, lambda, upper_bound, t_cs );
 
 
 	// printf("For process %c\n", tmp.pid);
