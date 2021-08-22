@@ -259,6 +259,7 @@ void FCFS( int n, int seed, double lambda, int upper_bound, int t_cs )
 			time = tmp.next_op_time;
 			printf("time %dms: ", time);
 			bool terminated = tmp.cpuburst_comp();
+			cpu_busy = false;
 			printReadyQueue( ready_queue );
 			if ( !terminated )
 			{
