@@ -62,7 +62,7 @@ char get_process_id( int n )
 }
 
 
-std::vector<Process> processes_init( int n, int seed, double lambda, int upper_bound )
+std::vector<Process> processes_init( int n, int seed, double lambda, int upper_bound, int t_cs )
 {
 
 	std::vector<Process> processes;
@@ -92,7 +92,7 @@ std::vector<Process> processes_init( int n, int seed, double lambda, int upper_b
 		cpu_bursts = getCPU_Bursts( upper_bound );
 
 		// Initialize process object
-		Process tmp( pid, arrival_time, cpu_bursts, tau );
+		Process tmp( pid, arrival_time, cpu_bursts, tau, t_cs );
 		
 		// For each cpu burst, get CPU burst time and I/O burst time
 		int j;
@@ -143,7 +143,7 @@ void printReadyQueue( std::list<char> ready_queue)
 void FCFS( int n, int seed, double lambda, int upper_bound, int t_cs )
 {
 	
-	std::vector<Process> processes = processes_init( n, seed, lambda, upper_bound );
+	std::vector<Process> processes = processes_init( n, seed, lambda, upper_bound, t_cs );
 	std::list<char> ready_queue;
 
 	int time = 0;
@@ -163,10 +163,15 @@ void FCFS( int n, int seed, double lambda, int upper_bound, int t_cs )
 		// If no process left in processes, all processes terminated, break out of loop
 		if ( processes.empty() ) break;
 
+		// Log events if it's not a CPU BURST, we treat that seperately
 		for ( auto p : processes )
 		{
 			int next_operation = p.next_op;
-			events.insert( {p.next_op_time, p} );
+			if ( next_operation != CPU_BURST )
+			{
+				events.insert( {p.next_op_time, p} );
+
+			}
 		}
 
 
@@ -188,7 +193,7 @@ void FCFS( int n, int seed, double lambda, int upper_bound, int t_cs )
 		// tie resolution order: 
 		// 			// cpu burst completion > io burst completion > new process arrival
 		// 			// we also defined macro:
-		// 			// CPU_BURST_COMP == 2, BACK_TO_Q == 1, ARRIVAL == 0
+		// 			// CPU_BURST_COMP == 2, BACK_TO_Q == 1, ARRIVAL == 0, CPU_BURST == -1
 		if ( !candidates.empty() )
 		{
 			for ( Process candidate : candidates )
@@ -212,54 +217,66 @@ void FCFS( int n, int seed, double lambda, int upper_bound, int t_cs )
 			}
 		}
 
-		// See if cpu is busy and if next event's time is larger than current time
-		if ( !cpu_busy && time < tmp_time )
+		// See if cpu is busy and if ready queue isn't empty, choose the front pid to perform cpu burst
+		if ( !cpu_busy && !ready_queue.empty() )
 		{
-			// if ready queue isn't empty, choose the front pid to perform cpu burst
-			if ( !ready_queue.empty() )
+			for ( auto p : processes )
 			{
-				for ( auto p : processes )
+				// Find the process with such pid
+				if ( p.pid == ready_queue.front() )
 				{
-					// Find the process with such pid
-					if ( p.pid == ready_queue.front() )
-					{
-						p.cpuburst();
-						ready_queue.pop_front();
-						cpu_busy = true;
-						break;
-					}
+					// cpu_busy = true;
+					// time += 1/2 * t_cs;  // context switch from Q to CPU
+					// p.cpuburst( time );
+					ready_queue.pop_front();
+					// break;
+					tmp = p;
 				}
 			}
+			// continue;
 		}
 		
-		// printf("time %dms: ", time);
-		// // decide what to do based on tmp Process's next_op
-		// if ( tmp.next_op == ARRIVAL )
-		// {
-		// 	tmp.arrival();
-		// 	ready_queue.push_back( tmp.pid );
-		// }
-		// else if ( tmp.next_op == CPU_BURST )
-		// {
-		// 	tmp.cpuburst();
-
-		// }
-		// else if ( tmp.next_op == IO_BURST )
-		// {
-		// 	tmp.ioburst( time );
-		// }
-		// else if ( tmp.next_op == BACK_TO_Q )
-		// {
-		// 	tmp.backtoq();
-		// 	ready_queue.push_back( tmp.pid );
-		// }
-		// else if ( tmp.next_op == TERMINATION )
-		// {
-		// 	tmp.terminate();
-		// }
+		// time = tmp_time;
+		
+		// decide what to do based on tmp Process's next_op
+		if ( tmp.next_op == ARRIVAL )
+		{
+			time = tmp.next_op_time;
+			printf("time %dms: ", time);
+			tmp.arrival();
+			ready_queue.push_back( tmp.pid );
+		}
+		else if ( tmp.next_op == CPU_BURST )
+		{
+			time += 1/2 * t_cs;
+			cpu_busy = true;
+			printf("time %dms: ", time);
+			tmp.cpuburst( time );
+			ready_queue.pop_front();
+		}
+		else if ( tmp.next_op == CPU_BURST_COMP )
+		{
+			time = tmp.next_op_time;
+			printf("time %dms: ", time);
+			bool terminated = tmp.cpuburst_comp();
+			if ( !terminated )
+			{
+				tmp.ioburst( time );
+			}
+		}
+		else if ( tmp.next_op == BACK_TO_Q )
+		{
+			printf("time %dms: ", time);
+			tmp.backtoq();
+			ready_queue.push_back( tmp.pid );
+		}
+		else
+		{
+			time++;
+			continue;
+		}
 
 		printReadyQueue( ready_queue );
-		time += tmp_time;
 	}
 	printf("Simulator ended for FCFS [Q empty]\n\n");
 
