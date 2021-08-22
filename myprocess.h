@@ -156,7 +156,7 @@ void Process::ioburst( int current_time )
 {
 	int burst_time = io_burst_times.front();
 	next_op = BACK_TO_Q;
-	next_op_time = current_time + 1/2 * t_cs + burst_time;
+	next_op_time = current_time + burst_time;
 	printf("time %dms: Process %c switching out of CPU; will block on I/O until time %dms ", current_time, pid, next_op_time );
 	io_burst_times.pop_front();
 }

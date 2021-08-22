@@ -228,7 +228,7 @@ void FCFS( int n, int seed, double lambda, int upper_bound, int t_cs )
 					// cpu_busy = true;
 					// time += 1/2 * t_cs;  // context switch from Q to CPU
 					// p.cpuburst( time );
-					ready_queue.pop_front();
+					// ready_queue.pop_front();
 					// break;
 					tmp = p;
 				}
@@ -259,8 +259,10 @@ void FCFS( int n, int seed, double lambda, int upper_bound, int t_cs )
 			time = tmp.next_op_time;
 			printf("time %dms: ", time);
 			bool terminated = tmp.cpuburst_comp();
+			printReadyQueue( ready_queue );
 			if ( !terminated )
 			{
+				time += 1/2 * t_cs;
 				tmp.ioburst( time );
 			}
 		}
@@ -270,11 +272,11 @@ void FCFS( int n, int seed, double lambda, int upper_bound, int t_cs )
 			tmp.backtoq();
 			ready_queue.push_back( tmp.pid );
 		}
-		else
-		{
-			time++;
-			continue;
-		}
+		// else
+		// {
+		// 	time++;
+		// 	continue;
+		// }
 
 		printReadyQueue( ready_queue );
 	}
