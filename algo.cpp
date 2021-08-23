@@ -151,9 +151,13 @@ void FCFS( int n, int seed, double lambda, int upper_bound, int t_cs )
 
 
 	bool cpu_busy = false;
+	int offset = t_cs / 2;
 
+	// int i = 0;
 	while( 1 )
 	{
+
+		// i++;
 		// Use a multimap to keep future events in "time" increasing order
 		std::multimap<int, Process> events;
 		// Use a vector to collect all other processes that tie
@@ -161,8 +165,11 @@ void FCFS( int n, int seed, double lambda, int upper_bound, int t_cs )
 
 		// Check on simulation termination
 		// If no process left in processes, all processes terminated, break out of loop
-		if ( processes.empty() ) break;
-
+		if ( processes.empty() ) 
+		{
+			time += offset;
+			break;
+		}
 		// Log events if it's not a CPU BURST, we treat that seperately
 		for ( auto p : processes )
 		{
@@ -170,73 +177,83 @@ void FCFS( int n, int seed, double lambda, int upper_bound, int t_cs )
 			if ( next_operation != CPU_BURST )
 			{
 				events.insert( {p.next_op_time, p} );
-
 			}
+			// printf("%c with next_op %d\n", p.pid, p.next_op );
 		}
 
+		Process tmp;
 
-		// Find the event expected to happen the soonest
-		auto itr = events.begin();
-		int tmp_time = itr->first;
-		Process tmp = itr->second;
-		
-		// We are using a multimap which allows key collision
-		// Need to add "candidates" if they share the same next_op_time, then resolve ties
-		itr++;
-		while ( itr != events.end() && itr->first == tmp_time )
+		if ( !events.empty() )
 		{
-			candidates.push_back( itr->second );
+			// Find the event expected to happen the soonest
+			auto itr = events.begin();
+			int tmp_time = itr->first;
+			tmp = itr->second;
+			
+			// We are using a multimap which allows key collision
+			// Need to add "candidates" if they share the same next_op_time, then resolve ties
 			itr++;
-		}
-
-		// Resolving ties
-		// tie resolution order: 
-		// 			// cpu burst completion > io burst completion > new process arrival
-		// 			// we also defined macro:
-		// 			// CPU_BURST_COMP == 2, BACK_TO_Q == 1, ARRIVAL == 0, CPU_BURST == -1
-		if ( !candidates.empty() )
-		{
-			for ( Process candidate : candidates )
+			while ( itr != events.end() && itr->first == tmp_time )
 			{
-				// if next operation is the same, choose the one with lower alphabet
-				if ( tmp.next_op == candidate.next_op )
+				candidates.push_back( itr->second );
+				itr++;
+			}
+
+			// Resolving ties
+			// tie resolution order: 
+			// 			// cpu burst completion > io burst completion > new process arrival
+			// 			// we also defined macro:
+			// 			// CPU_BURST_COMP == 2, BACK_TO_Q == 1, ARRIVAL == 0, CPU_BURST == -1
+			if ( !candidates.empty() )
+			{
+				for ( Process candidate : candidates )
 				{
-					if ( tmp.pid > candidate.pid )
-					{	
-						tmp = candidate;
-					}
-				}
-				else
-				{
-					
-					if ( tmp.next_op > candidate.next_op )
+					// if next operation is the same, choose the one with lower alphabet
+					if ( tmp.next_op == candidate.next_op )
 					{
-						tmp = candidate;
+						if ( tmp.pid > candidate.pid )
+						{	
+							tmp = candidate;
+						}
+					}
+					else
+					{
+						if ( tmp.next_op < candidate.next_op )
+						{
+							tmp = candidate;
+						}
 					}
 				}
 			}
 		}
 
+
+		// std::cout << "CPU is: " << cpu_busy << " and ready queue empty? " << ready_queue.empty() << std::endl;
 		// See if cpu is busy and if ready queue isn't empty, choose the front pid to perform cpu burst
 		if ( !cpu_busy && !ready_queue.empty() )
 		{
+			// if ( processes.empty() ) printf("processes is empty\n");
+			// printf("readyqueue front is %c\n", ready_queue.front());
 			for ( auto p : processes )
 			{
 				// Find the process with such pid
 				if ( p.pid == ready_queue.front() )
 				{
-					// cpu_busy = true;
-					// time += 1/2 * t_cs;  // context switch from Q to CPU
-					// p.cpuburst( time );
-					// ready_queue.pop_front();
-					// break;
 					tmp = p;
+					// printf("found it\n");
 				}
 			}
-			// continue;
 		}
 		
-		// time = tmp_time;
+		
+		// if ( !processes.empty() )
+		// {
+		// 	printf("HAHA\n");
+		// }
+		// else
+		// {
+		// 	printf("HEHE\n");
+		// }
 		
 		// decide what to do based on tmp Process's next_op
 		if ( tmp.next_op == ARRIVAL )
@@ -248,7 +265,7 @@ void FCFS( int n, int seed, double lambda, int upper_bound, int t_cs )
 		}
 		else if ( tmp.next_op == CPU_BURST )
 		{
-			time += 1/2 * t_cs;
+			time += offset;
 			cpu_busy = true;
 			printf("time %dms: ", time);
 			tmp.cpuburst( time );
@@ -263,24 +280,42 @@ void FCFS( int n, int seed, double lambda, int upper_bound, int t_cs )
 			printReadyQueue( ready_queue );
 			if ( !terminated )
 			{
-				time += 1/2 * t_cs;
 				tmp.ioburst( time );
+				time += offset;
 			}
 		}
 		else if ( tmp.next_op == BACK_TO_Q )
 		{
+			time = tmp.next_op_time;
 			printf("time %dms: ", time);
 			tmp.backtoq();
 			ready_queue.push_back( tmp.pid );
 		}
-		// else
-		// {
-		// 	time++;
-		// 	continue;
-		// }
 
-		printReadyQueue( ready_queue );
+		if ( !tmp.terminated )
+		{
+			printReadyQueue( ready_queue );
+		}
+
+		auto p = processes.begin();
+		for ( long unsigned int j = 0; j < processes.size(); j++ )
+		{
+
+			if ( tmp.pid == processes[j].pid )
+			{
+				if ( tmp.terminated )
+				{
+					processes.erase(p);
+				}
+				else
+				{
+					processes[j] = tmp;
+				}
+			}
+			p++;
+		}
+		
 	}
-	printf("Simulator ended for FCFS [Q empty]\n\n");
+	printf("time %dms: Simulator ended for FCFS [Q empty]\n\n", time);
 
 }

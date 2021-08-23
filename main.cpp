@@ -86,6 +86,7 @@ int main( int argc, char ** argv )
 
 
 	FCFS( n, seed, lambda, upper_bound, t_cs );
+	// printf("t_cs is %d\n", t_cs);
 
 
 	// printf("For process %c\n", tmp.pid);

@@ -17,6 +17,7 @@ class Process
 
 	public:
 
+		Process();
 		Process( char _pid, int _t_arrival, int _cpu_bursts, int _tau, int _t_cs );
 		// Process( const Process &old );
 		const char getID() const;
@@ -49,6 +50,11 @@ class Process
 		std::list<int> cpu_burst_times;
 		std::list<int> io_burst_times;
 };
+
+Process::Process()
+{
+	
+}
 
 // Class constructor
 Process::Process( char _pid, int _t_arrival, int _cpu_bursts, int _tau, int _t_cs )
@@ -156,7 +162,7 @@ void Process::ioburst( int current_time )
 {
 	int burst_time = io_burst_times.front();
 	next_op = BACK_TO_Q;
-	next_op_time = current_time + burst_time;
+	next_op_time = current_time + burst_time + t_cs/2;
 	printf("time %dms: Process %c switching out of CPU; will block on I/O until time %dms ", current_time, pid, next_op_time );
 	io_burst_times.pop_front();
 }
