@@ -53,7 +53,7 @@ class Process
 
 Process::Process()
 {
-	
+	terminated = true;
 }
 
 // Class constructor
@@ -70,20 +70,6 @@ Process::Process( char _pid, int _t_arrival, int _cpu_bursts, int _tau, int _t_c
 	t_cs = _t_cs;
 }
 
-// // Class copy constructor
-// Process::Process( const Process &old )
-// {
-// 	pid = old.pid;
-// 	t_arrival = old.t_arrival;
-// 	cpu_bursts = old.cpu_bursts;
-// 	tau = old.tau;
-// 	cpu_burst_times = old.cpu_burst_times;
-// 	io_burst_times = old.io_burst_times;
-// 	cpu_bursts_completed = old.cpu_bursts_completed;
-// 	io_bursts_completed = old.io_bursts_completed;
-// 	next_burst = old.next_burst;
-// }
-
 // add cpu burst time t into member vector
 void Process::logCPUBurstTime( int t )
 {
@@ -96,34 +82,34 @@ void Process::logIOBurstTime( int t )
 	io_burst_times.push_back( t );
 }
 
-// return arrival time of member (t_arrival)
-const int Process::getArrivalTime() const
-{
-	return t_arrival;
-}
+// // return arrival time of member (t_arrival)
+// const int Process::getArrivalTime() const
+// {
+// 	return t_arrival;
+// }
 
-// 
-const int Process::getCPUBursts() const
-{
-	return cpu_bursts;
-}
+// // 
+// const int Process::getCPUBursts() const
+// {
+// 	return cpu_bursts;
+// }
 
 
-const char Process::getID() const
-{
-	return pid;
-}
+// const char Process::getID() const
+// {
+// 	return pid;
+// }
 
-const int Process::getTau() const
-{
-	return tau;
-}
+// const int Process::getTau() const
+// {
+// 	return tau;
+// }
 
 // print process arrival event
 // change the next_op to CPU_BURST
 void Process::arrival()
 {
-	printf("Process %c arrived; added to ready queue ", pid);
+	if ( next_op_time < 999 ) printf("Process %c arrived; added to ready queue ", pid);
 	next_op = CPU_BURST;
 }
 
@@ -133,7 +119,9 @@ void Process::arrival()
 void Process::cpuburst( int current_time )
 {
 	int burst_time = cpu_burst_times.front();
-	printf("Process %c started using the CPU for %dms burst ", pid, burst_time);
+	if ( current_time < 999 ) {
+		printf("Process %c started using the CPU for %dms burst ", pid, burst_time);
+	}
 	next_op = CPU_BURST_COMP;
 	next_op_time = current_time + burst_time;
 	cpu_burst_times.pop_front();
@@ -152,7 +140,9 @@ bool Process::cpuburst_comp()
 	}
 	else
 	{
-		printf("Process %c completed a CPU burst; %d burst%s to go ", pid, cpu_burst_togo, cpu_burst_togo == 1 ? "" : "s" );
+		if ( next_op_time < 999 ) {
+			printf("Process %c completed a CPU burst; %d burst%s to go ", pid, cpu_burst_togo, cpu_burst_togo == 1 ? "" : "s" );
+		}
 		return false;
 	}
 }
@@ -163,13 +153,17 @@ void Process::ioburst( int current_time )
 	int burst_time = io_burst_times.front();
 	next_op = BACK_TO_Q;
 	next_op_time = current_time + burst_time + t_cs/2;
-	printf("time %dms: Process %c switching out of CPU; will block on I/O until time %dms ", current_time, pid, next_op_time );
+	if ( current_time < 999 ) {
+		printf("time %dms: Process %c switching out of CPU; will block on I/O until time %dms ", current_time, pid, next_op_time );
+	}
 	io_burst_times.pop_front();
 }
 
 void Process::backtoq()
 {
-	printf("Process %c completed I/O; added to ready queue ", pid);
+	if ( next_op_time < 999 ) {
+		printf("Process %c completed I/O; added to ready queue ", pid);
+	}
 	next_op = CPU_BURST;
 }
 

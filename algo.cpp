@@ -145,19 +145,15 @@ void FCFS( int n, int seed, double lambda, int upper_bound, int t_cs )
 	
 	std::vector<Process> processes = processes_init( n, seed, lambda, upper_bound, t_cs );
 	std::list<char> ready_queue;
-
 	int time = 0;
-	printf("time %dms: Simulator started for FCFS [Q empty]\n", time);
-
-
 	bool cpu_busy = false;
 	int offset = t_cs / 2;
+	int time_cap = 999;
 
-	// int i = 0;
+	printf("time %dms: Simulator started for FCFS [Q empty]\n", time);
 	while( 1 )
 	{
 
-		// i++;
 		// Use a multimap to keep future events in "time" increasing order
 		std::multimap<int, Process> events;
 		// Use a vector to collect all other processes that tie
@@ -179,12 +175,26 @@ void FCFS( int n, int seed, double lambda, int upper_bound, int t_cs )
 				events.insert( {p.next_op_time, p} );
 			}
 			// printf("%c with next_op %d\n", p.pid, p.next_op );
+			// if ( time == 42 )
+			// {
+			// 	printf("%c with nextop %d\n", p.pid, p.next_op);
+			// }
 		}
 
 		Process tmp;
 
+
 		if ( !events.empty() )
 		{
+			// if ( time == 42 )
+			// {
+			// 	for ( auto event : events )
+			// 	{
+			// 		Process p = event.second;
+			// 		printf("%c with nextop %d at %d\n", p.pid, p.next_op, p.next_op_time);
+
+			// 	}
+			// }
 			// Find the event expected to happen the soonest
 			auto itr = events.begin();
 			int tmp_time = itr->first;
@@ -193,7 +203,7 @@ void FCFS( int n, int seed, double lambda, int upper_bound, int t_cs )
 			// We are using a multimap which allows key collision
 			// Need to add "candidates" if they share the same next_op_time, then resolve ties
 			itr++;
-			while ( itr != events.end() && itr->first == tmp_time )
+			while ( itr != events.end() && itr->first <= tmp_time )
 			{
 				candidates.push_back( itr->second );
 				itr++;
@@ -201,9 +211,9 @@ void FCFS( int n, int seed, double lambda, int upper_bound, int t_cs )
 
 			// Resolving ties
 			// tie resolution order: 
-			// 			// cpu burst completion > io burst completion > new process arrival
-			// 			// we also defined macro:
-			// 			// CPU_BURST_COMP == 2, BACK_TO_Q == 1, ARRIVAL == 0, CPU_BURST == -1
+				// cpu burst completion > io burst completion > new process arrival
+				// we also defined macro:
+				// CPU_BURST_COMP == 2, BACK_TO_Q == 1, ARRIVAL == 0
 			if ( !candidates.empty() )
 			{
 				for ( Process candidate : candidates )
@@ -227,72 +237,65 @@ void FCFS( int n, int seed, double lambda, int upper_bound, int t_cs )
 			}
 		}
 
-
 		// std::cout << "CPU is: " << cpu_busy << " and ready queue empty? " << ready_queue.empty() << std::endl;
 		// See if cpu is busy and if ready queue isn't empty, choose the front pid to perform cpu burst
 		if ( !cpu_busy && !ready_queue.empty() )
 		{
-			// if ( processes.empty() ) printf("processes is empty\n");
-			// printf("readyqueue front is %c\n", ready_queue.front());
+
 			for ( auto p : processes )
 			{
 				// Find the process with such pid
 				if ( p.pid == ready_queue.front() )
 				{
 					tmp = p;
-					// printf("found it\n");
 				}
 			}
 		}
-		
-		
-		// if ( !processes.empty() )
-		// {
-		// 	printf("HAHA\n");
-		// }
-		// else
-		// {
-		// 	printf("HEHE\n");
-		// }
+
 		
 		// decide what to do based on tmp Process's next_op
 		if ( tmp.next_op == ARRIVAL )
 		{
 			time = tmp.next_op_time;
-			printf("time %dms: ", time);
+			if ( time < time_cap ) printf("time %dms: ", time);
 			tmp.arrival();
 			ready_queue.push_back( tmp.pid );
 		}
+
 		else if ( tmp.next_op == CPU_BURST )
 		{
 			time += offset;
 			cpu_busy = true;
-			printf("time %dms: ", time);
+			if ( time < time_cap ) printf("time %dms: ", time);
 			tmp.cpuburst( time );
 			ready_queue.pop_front();
 		}
+
 		else if ( tmp.next_op == CPU_BURST_COMP )
 		{
 			time = tmp.next_op_time;
-			printf("time %dms: ", time);
+			// this implies termination after cpu burst completion
+			if ( tmp.cpu_burst_times.size() == 0 || time < time_cap ) printf("time %dms: ", time);
+
 			bool terminated = tmp.cpuburst_comp();
+			if ( tmp.cpu_burst_times.size() == 0 || time < time_cap ) printReadyQueue( ready_queue );
 			cpu_busy = false;
-			printReadyQueue( ready_queue );
 			if ( !terminated )
 			{
 				tmp.ioburst( time );
 				time += offset;
 			}
 		}
+
 		else if ( tmp.next_op == BACK_TO_Q )
 		{
 			time = tmp.next_op_time;
-			printf("time %dms: ", time);
+			if ( time < time_cap ) printf("time %dms: ", time);
 			tmp.backtoq();
 			ready_queue.push_back( tmp.pid );
 		}
 
-		if ( !tmp.terminated )
+		if ( !tmp.terminated && (time < time_cap) )
 		{
 			printReadyQueue( ready_queue );
 		}
